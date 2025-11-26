@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 100px auto;
+        }
+
+        .login-form {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="login-form">
+            <h1>🔐 Task Manager</h1>
+            {% with messages = get_flashed_messages(category_filter=['error']) %}
+            {% if messages %}
+            <div class="error">
+                {% for message in messages %}
+                <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('login') }}" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div>
+                    {{ form.username.label }}
+                    {{ form.username(size=32) }}
+                    {% if form.username.errors %}
+                    <div class="error">
+                        {% for error in form.username.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {{ form.password.label }}
+                    {{ form.password(size=32) }}
+                    {% if form.password.errors %}
+                    <div class="error">
+                        {% for error in form.password.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit">Ingresar</button>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>
