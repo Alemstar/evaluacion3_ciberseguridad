@@ -33,6 +33,9 @@ RUN python secure_create_db.py
 # Cambiar a usuario no-root
 USER appuser
 
+# Variables de entorno para el contenedor
+ENV DOCKER_ENV=true
+
 # Exponer puerto
 EXPOSE 5000
 

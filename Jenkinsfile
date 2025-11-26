@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'ZAP_FAIL_THRESHOLD', defaultValue: '0', description: 'Número máximo permitido de alertas High/Critical antes de fallar el build')
+    }
+
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
         timeout(time: 30, unit: 'MINUTES')
@@ -11,6 +15,7 @@ pipeline {
         DOCKER_IMAGE = "evaluacion3_ciberseguridad:${BUILD_NUMBER}"
         OWASP_ZAP_PORT = '8080'
         VENV_DIR = '.venv'
+        ZAP_FAIL_THRESHOLD = '0'
     }
 
     stages {
@@ -71,7 +76,7 @@ pipeline {
             }
         }
 
-        stage('DAST - OWASP ZAP (Smoke)') {
+        stage('DAST - OWASP ZAP (Full)') {
             steps {
                 sh '''
                     docker run -d -p 5000:5000 --name taskapp ${DOCKER_IMAGE}
@@ -79,7 +84,31 @@ pipeline {
 
                     mkdir -p zap-reports
                     docker run --rm -v $(pwd)/zap-reports:/zap/reports owasp/zap2docker-stable \
-                        zap-baseline.py -t http://host.docker.internal:5000 -r /zap/reports/zap-report.html || true
+                        zap-full-scan.py -t http://host.docker.internal:5000 -r /zap/reports/zap-full-report.html -J /zap/reports/zap-full-report.json || true
+
+                    . ${VENV_DIR}/bin/activate || true
+                    python3 - << 'PY'
+import json, sys, os
+p = os.path.join(os.getcwd(), 'zap-reports', 'zap-full-report.json')
+if not os.path.exists(p):
+    print('No ZAP JSON report found:', p)
+    sys.exit(0)
+with open(p) as f:
+    data = json.load(f)
+high = 0
+for site in data.get('site', []):
+    for alert in site.get('alerts', []):
+        if alert.get('risk') in ('High', 'Critical'):
+            high += 1
+print('ZAP high/critical alerts:', high)
+try:
+    threshold = int(os.environ.get('ZAP_FAIL_THRESHOLD', '0'))
+except Exception:
+    threshold = 0
+print('ZAP fail threshold:', threshold)
+if high > threshold:
+    sys.exit(2)
+PY
 
                     docker stop taskapp || true
                     docker rm taskapp || true

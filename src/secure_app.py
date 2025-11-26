@@ -7,6 +7,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 import bcrypt
+import sys
 
 load_dotenv()
 
@@ -27,8 +28,11 @@ app.config.update(
     WTF_CSRF_ENABLED=True
 )
 
-# Configurar logging
-log_handler = RotatingFileHandler('app.log', maxBytes=10485760, backupCount=10)
+# Configurar logging (para Docker usar StreamHandler en lugar de archivo)
+if os.getenv('DOCKER_ENV') == 'true':
+    log_handler = logging.StreamHandler(sys.stdout)
+else:
+    log_handler = RotatingFileHandler('app.log', maxBytes=10485760, backupCount=10)
 log_handler.setFormatter(logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 ))
